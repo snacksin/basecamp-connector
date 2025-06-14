@@ -1,0 +1,22 @@
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+
+export default async function cb(req: VercelRequest, res: VercelResponse) {
+  const { code } = req.query;
+  if (!code || Array.isArray(code)) { res.status(400).send("Missing code"); return; }
+
+  const j = await fetch(
+    "https://launchpad.37signals.com/authorization/token?type=web_server",
+    { method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id:     process.env.BC_CLIENT_ID,
+        client_secret: process.env.BC_CLIENT_SECRET,
+        redirect_uri:  process.env.BC_REDIRECT_URI,
+        code
+      })
+    }).then(r => r.json());
+
+  console.log("== BC TOKENS ==", j);
+  res.setHeader("Content-Type", "text/html");
+  res.end(`<h2>Copy into Vercel env-vars:</h2><pre>${JSON.stringify(j, null, 2)}</pre>`);
+}
